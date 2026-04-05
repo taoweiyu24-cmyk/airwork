@@ -1,24 +1,31 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Routes, Route } from 'react-router-dom';
 import {
+  Brain,
   ClipboardList,
+  LayoutDashboard,
   Mail,
+  Map,
   Plus,
   RefreshCw,
   Loader2,
+  Settings,
   Trash2,
   Pencil,
   AlertCircle,
 } from 'lucide-react';
 import AppShell from '../components/layout/AppShell';
+import SubNav from '../components/SubNav';
 import Card from '../components/ui/Card';
 import Button from '../components/ui/Button';
 import Badge from '../components/ui/Badge';
 import type { BadgeProps } from '../components/ui/Badge';
 import WorkItemForm from '../components/WorkItemForm';
+import AiAnalysisPanel from '../components/AiAnalysisPanel';
 import DashboardOverview from '../components/DashboardOverview';
 import SettingsView from '../components/SettingsView';
 import GisViewComponent from '../components/GisView';
+import InboxView from '../components/InboxView';
 import type { WorkItem, WorkItemStatus, Priority, Source } from '../types/domain';
 import * as api from '../services/api';
 
@@ -56,6 +63,7 @@ function WorkItemsList() {
   const [modalOpen, setModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<WorkItem | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [analyzingItem, setAnalyzingItem] = useState<WorkItem | null>(null);
 
   const loadItems = useCallback(async () => {
     setLoading(true);
@@ -244,6 +252,13 @@ function WorkItemsList() {
                           <Pencil className="h-4 w-4" />
                         </button>
                         <button
+                          className="rounded-lg p-1.5 text-gray-400 hover:bg-purple-50 hover:text-purple-600 dark:hover:bg-purple-900/20 dark:hover:text-purple-400"
+                          onClick={() => setAnalyzingItem(item)}
+                          title="AI 分析"
+                        >
+                          <Brain className="h-4 w-4" />
+                        </button>
+                        <button
                           className="rounded-lg p-1.5 text-gray-400 hover:bg-red-50 hover:text-red-600 disabled:opacity-50 dark:hover:bg-red-900/20 dark:hover:text-red-400"
                           onClick={() => confirmDelete(item)}
                           disabled={deletingId === item.id}
@@ -267,33 +282,34 @@ function WorkItemsList() {
         onSubmit={handleFormSubmit}
         editingItem={editingItem}
       />
+
+      {analyzingItem && (
+        <AiAnalysisPanel
+          workItem={analyzingItem}
+          isOpen={true}
+          onClose={() => setAnalyzingItem(null)}
+        />
+      )}
     </>
   );
 }
 
-function Inbox() {
-  return (
-    <Card title="邮件收件箱">
-      <div className="flex flex-col items-center justify-center gap-2 py-16 text-center">
-        <Mail className="h-12 w-12 text-gray-300 dark:text-gray-600" />
-        <p className="text-sm font-medium text-gray-500 dark:text-gray-400">收件箱为空</p>
-        <Button variant="secondary" size="sm">
-          <RefreshCw className="h-4 w-4" />
-          同步邮件
-        </Button>
-      </div>
-    </Card>
-  );
-}
-
+const subNavItems = [
+  { label: '概览', to: '/utility', icon: LayoutDashboard, end: true },
+  { label: '工作项', to: '/utility/items', icon: ClipboardList },
+  { label: '收件箱', to: '/utility/inbox', icon: Mail },
+  { label: 'GIS', to: '/utility/gis', icon: Map },
+  { label: '设置', to: '/utility/settings', icon: Settings },
+] as const;
 
 export default function UtilityDashboard() {
   return (
     <AppShell title="工具台" subtitle="工作项管理与分析">
+      <SubNav items={subNavItems} />
       <Routes>
         <Route index element={<DashboardOverview />} />
         <Route path="items" element={<WorkItemsList />} />
-        <Route path="inbox" element={<Inbox />} />
+        <Route path="inbox" element={<InboxView />} />
         <Route path="gis" element={<GisViewComponent />} />
         <Route path="settings" element={<SettingsView />} />
       </Routes>

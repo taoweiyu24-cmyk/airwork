@@ -4,7 +4,6 @@ import {
   Wrench,
   TrendingUp,
   Trophy,
-  Settings,
   ChevronLeft,
   ChevronRight,
   LayoutDashboard,
@@ -21,7 +20,6 @@ const navItems: NavItem[] = [
   { label: '工具台', to: '/utility', icon: Wrench },
   { label: '收入分析', to: '/revenue', icon: TrendingUp },
   { label: '足球数据', to: '/football', icon: Trophy },
-  { label: '设置', to: '/utility/settings', icon: Settings },
 ];
 
 export default function Sidebar() {

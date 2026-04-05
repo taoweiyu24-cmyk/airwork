@@ -83,6 +83,20 @@ export interface TileSource {
   max_zoom: number;
 }
 
+export interface MailMessage {
+  id: string;
+  accountId: string;
+  messageId: string;
+  subject: string;
+  fromAddress: string;
+  toAddresses: string[];
+  bodyText: string | null;
+  bodyHtml: string | null;
+  receivedAt: number;
+  isRead: boolean;
+  workItemId: string | null;
+}
+
 export interface SearchResult {
   id: string;
   title: string;

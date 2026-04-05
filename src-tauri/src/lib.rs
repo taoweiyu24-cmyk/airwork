@@ -198,6 +198,70 @@ fn list_ai_profiles(state: tauri::State<WifState>) -> Result<String, String> {
     serde_json::to_string(&profiles).map_err(|e| e.to_string())
 }
 
+#[tauri::command]
+fn create_ai_profile(json: String, state: tauri::State<WifState>) -> Result<String, String> {
+    let app = state.0.lock().map_err(|e| e.to_string())?;
+    let profile: wif_domain::AiProfile =
+        serde_json::from_str(&json).map_err(|e| e.to_string())?;
+    let repo = wif_data::SqliteAiProfileRepo::new(app.db());
+    use wif_domain::AiProfileRepository;
+    let created = repo.create(&profile).map_err(|e| e.to_string())?;
+    serde_json::to_string(&created).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+fn update_ai_profile(json: String, state: tauri::State<WifState>) -> Result<String, String> {
+    let app = state.0.lock().map_err(|e| e.to_string())?;
+    let profile: wif_domain::AiProfile =
+        serde_json::from_str(&json).map_err(|e| e.to_string())?;
+    let repo = wif_data::SqliteAiProfileRepo::new(app.db());
+    use wif_domain::AiProfileRepository;
+    let updated = repo.update(&profile).map_err(|e| e.to_string())?;
+    serde_json::to_string(&updated).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+fn delete_ai_profile(id: String, state: tauri::State<WifState>) -> Result<(), String> {
+    let app = state.0.lock().map_err(|e| e.to_string())?;
+    let repo = wif_data::SqliteAiProfileRepo::new(app.db());
+    use wif_domain::AiProfileRepository;
+    let ulid = ulid::Ulid::from_string(&id).map_err(|e| e.to_string())?;
+    repo.delete(ulid).map_err(|e| e.to_string())
+}
+
+// ── Mail Account CRUD ────────────────────────────────────────────────────────
+
+#[tauri::command]
+fn create_mail_account(json: String, state: tauri::State<WifState>) -> Result<String, String> {
+    let app = state.0.lock().map_err(|e| e.to_string())?;
+    let account: wif_domain::MailAccount =
+        serde_json::from_str(&json).map_err(|e| e.to_string())?;
+    let repo = wif_data::SqliteMailAccountRepo::new(app.db());
+    use wif_domain::MailAccountRepository;
+    let created = repo.create(&account).map_err(|e| e.to_string())?;
+    serde_json::to_string(&created).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+fn update_mail_account(json: String, state: tauri::State<WifState>) -> Result<String, String> {
+    let app = state.0.lock().map_err(|e| e.to_string())?;
+    let account: wif_domain::MailAccount =
+        serde_json::from_str(&json).map_err(|e| e.to_string())?;
+    let repo = wif_data::SqliteMailAccountRepo::new(app.db());
+    use wif_domain::MailAccountRepository;
+    let updated = repo.update(&account).map_err(|e| e.to_string())?;
+    serde_json::to_string(&updated).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+fn delete_mail_account(id: String, state: tauri::State<WifState>) -> Result<(), String> {
+    let app = state.0.lock().map_err(|e| e.to_string())?;
+    let repo = wif_data::SqliteMailAccountRepo::new(app.db());
+    use wif_domain::MailAccountRepository;
+    let ulid = ulid::Ulid::from_string(&id).map_err(|e| e.to_string())?;
+    repo.delete(ulid).map_err(|e| e.to_string())
+}
+
 // ── Application Entry Point ───────────────────────────────────────────────────
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -234,6 +298,12 @@ pub fn run() {
             list_mail_accounts,
             sync_mail_inbox,
             list_ai_profiles,
+            create_ai_profile,
+            update_ai_profile,
+            delete_ai_profile,
+            create_mail_account,
+            update_mail_account,
+            delete_mail_account,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
