@@ -1,0 +1,10 @@
+[package]
+name = "wif-domain"
+description = "纯领域模型 — 实体、枚举、值对象、仓储接口"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+serde = { workspace = true }
+ulid = { workspace = true }
+thiserror = { workspace = true }

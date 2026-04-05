@@ -1,0 +1,15 @@
+[package]
+name = "wif-gis"
+description = "GIS 模块 — 地图服务、矢量/栅格处理、坐标变换、空间分析"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+wif-domain = { path = "../wif-domain" }
+serde = { workspace = true }
+serde_json = { workspace = true }
+anyhow = { workspace = true }
+thiserror = { workspace = true }
+geo = "0.29"
+geojson = "0.24"
+ulid = { workspace = true }

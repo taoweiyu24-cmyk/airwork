@@ -1,0 +1,14 @@
+[package]
+name = "wif-ai"
+description = "AI 集成 — OpenAI 兼容 LLM 客户端、提示词管理、出站策略"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+wif-domain = { path = "../wif-domain" }
+serde = { workspace = true }
+serde_json = { workspace = true }
+anyhow = { workspace = true }
+thiserror = { workspace = true }
+tokio = { workspace = true }
+reqwest = { version = "0.12", features = ["json"] }

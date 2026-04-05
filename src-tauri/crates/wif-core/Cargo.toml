@@ -1,0 +1,18 @@
+[package]
+name = "wif-core"
+description = "编排层 — DI 组合根、模块生命周期管理"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+wif-domain = { path = "../wif-domain" }
+wif-data = { path = "../wif-data" }
+wif-ai = { path = "../wif-ai" }
+wif-docs = { path = "../wif-docs" }
+wif-mail = { path = "../wif-mail" }
+wif-search = { path = "../wif-search" }
+wif-gis = { path = "../wif-gis" }
+serde = { workspace = true }
+anyhow = { workspace = true }
+thiserror = { workspace = true }
+tokio = { workspace = true }

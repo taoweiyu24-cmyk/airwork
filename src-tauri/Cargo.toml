@@ -1,0 +1,53 @@
+[workspace]
+members = [
+    ".",
+    "crates/wif-domain",
+    "crates/wif-data",
+    "crates/wif-ai",
+    "crates/wif-core",
+    "crates/wif-docs",
+    "crates/wif-mail",
+    "crates/wif-search",
+    "crates/wif-gis",
+]
+resolver = "2"
+
+[workspace.package]
+version = "0.1.0"
+edition = "2021"
+
+[workspace.dependencies]
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+anyhow = "1"
+thiserror = "2"
+tokio = { version = "1", features = ["full"] }
+ulid = { version = "1", features = ["serde"] }
+
+[package]
+name = "wif-app"
+version.workspace = true
+edition.workspace = true
+description = "WorkItemFlow - 工作项管理桌面应用"
+authors = ["you"]
+
+[lib]
+name = "wif_app_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tauri = { version = "2", features = [] }
+tauri-plugin-opener = "2"
+serde = { workspace = true }
+serde_json = { workspace = true }
+wif-core = { path = "crates/wif-core" }
+wif-domain = { path = "crates/wif-domain" }
+wif-data = { path = "crates/wif-data" }
+wif-ai = { path = "crates/wif-ai" }
+wif-search = { path = "crates/wif-search" }
+wif-gis = { path = "crates/wif-gis" }
+ulid = { workspace = true }
+

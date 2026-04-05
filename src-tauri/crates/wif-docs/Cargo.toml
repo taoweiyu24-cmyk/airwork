@@ -1,0 +1,15 @@
+[package]
+name = "wif-docs"
+description = "文档处理 — PDF/DOCX/XLSX/PPTX 导入导出与元数据提取"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+serde = { workspace = true }
+serde_json = { workspace = true }
+anyhow = { workspace = true }
+thiserror = { workspace = true }
+calamine = "0.26"
+
+[dev-dependencies]
+tempfile = "3"

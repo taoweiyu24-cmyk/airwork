@@ -1,0 +1,14 @@
+[package]
+name = "wif-search"
+description = "混合搜索 — FTS5 关键词 + DuckDB 向量语义搜索 (RRF 融合)"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+wif-domain = { path = "../wif-domain" }
+wif-data = { path = "../wif-data" }
+serde = { workspace = true }
+serde_json = { workspace = true }
+anyhow = { workspace = true }
+thiserror = { workspace = true }
+rusqlite = { version = "0.34", features = ["bundled"] }

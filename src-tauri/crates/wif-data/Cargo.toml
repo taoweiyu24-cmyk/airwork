@@ -1,0 +1,14 @@
+[package]
+name = "wif-data"
+description = "数据访问层 — SQLite 仓储实现、迁移"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+wif-domain = { path = "../wif-domain" }
+serde = { workspace = true }
+serde_json = { workspace = true }
+anyhow = { workspace = true }
+thiserror = { workspace = true }
+rusqlite = { version = "0.34", features = ["bundled"] }
+ulid = { workspace = true }
