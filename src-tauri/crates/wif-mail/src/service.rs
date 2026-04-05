@@ -51,6 +51,26 @@ impl MailService {
         sync.fetch_new_messages(None).await
     }
 
+    /// Sync the INBOX of a given account, fetching the most recent `limit`
+    /// messages via IMAP.
+    ///
+    /// This is the primary entry point for the Tauri IPC command. It accepts
+    /// a [`MailAccount`] directly (looked up by the caller) so the service
+    /// does not need to hold a database reference.
+    pub async fn sync_inbox(
+        account: &MailAccount,
+        limit: usize,
+    ) -> Result<Vec<MailMessage>, MailError> {
+        let account_clone = account.clone();
+        // Run blocking IMAP I/O on a dedicated thread.
+        tokio::task::spawn_blocking(move || {
+            let svc = ImapSyncService::new(account_clone);
+            svc.fetch_recent(limit)
+        })
+        .await
+        .map_err(|e| MailError::ImapFailed(format!("邮件同步任务失败: {e}")))?
+    }
+
     /// Send an email on behalf of `account_id`.
     ///
     /// Returns `Err(MailError::AccountNotFound)` when no account with the
@@ -134,12 +154,17 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn sync_known_account_returns_empty_vec() {
+    async fn sync_known_account_returns_imap_error_without_server() {
+        // With real IMAP implementation, syncing against a test account that
+        // has no real server will produce an ImapFailed or OAuthFailed error.
         let mut svc = MailService::new();
         let id = Ulid::new();
         svc.register_account(make_account(id));
-        let messages = svc.sync_account(&id.to_string()).await.unwrap();
-        assert!(messages.is_empty());
+        let result = svc.sync_account(&id.to_string()).await;
+        assert!(
+            result.is_err(),
+            "should fail when IMAP server is unreachable"
+        );
     }
 
     #[test]

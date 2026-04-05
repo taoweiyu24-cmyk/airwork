@@ -1,5 +1,7 @@
-import { useState, useEffect } from 'react';
-import { Map, Eye, EyeOff, Layers, Globe } from 'lucide-react';
+import { useState, useEffect, useRef, useCallback } from 'react';
+import maplibregl from 'maplibre-gl';
+import 'maplibre-gl/dist/maplibre-gl.css';
+import { Eye, EyeOff, Layers, Globe } from 'lucide-react';
 import * as api from '../services/api';
 import type { GisLayer, TileSource } from '../types/domain';
 import Card from './ui/Card';
@@ -17,12 +19,44 @@ const LAYER_TYPE_LABEL: Record<string, string> = {
   tile: '瓦片',
 };
 
+const DEFAULT_CENTER: [number, number] = [116.4, 39.9];
+const DEFAULT_ZOOM = 4;
+const RASTER_SOURCE_ID = 'basemap-source';
+const RASTER_LAYER_ID = 'basemap-layer';
+
+function buildMapStyle(source: TileSource): maplibregl.StyleSpecification {
+  return {
+    version: 8,
+    sources: {
+      [RASTER_SOURCE_ID]: {
+        type: 'raster',
+        tiles: [source.url_template],
+        tileSize: 256,
+        minzoom: source.min_zoom,
+        maxzoom: source.max_zoom,
+        attribution: source.attribution,
+      },
+    },
+    layers: [
+      {
+        id: RASTER_LAYER_ID,
+        type: 'raster',
+        source: RASTER_SOURCE_ID,
+      },
+    ],
+  };
+}
+
 export default function GisView() {
   const [tileSources, setTileSources] = useState<TileSource[]>([]);
   const [layers, setLayers] = useState<GisLayer[]>([]);
   const [selectedSourceIdx, setSelectedSourceIdx] = useState(0);
   const [loading, setLoading] = useState(true);
 
+  const mapContainerRef = useRef<HTMLDivElement>(null);
+  const mapRef = useRef<maplibregl.Map | null>(null);
+
+  // Load data from backend
   useEffect(() => {
     let cancelled = false;
 
@@ -45,19 +79,66 @@ export default function GisView() {
     return () => { cancelled = true; };
   }, []);
 
-  const activeSource: TileSource | undefined = tileSources[selectedSourceIdx];
+  // Initialize map once data is loaded and container is ready
+  useEffect(() => {
+    if (loading || tileSources.length === 0 || !mapContainerRef.current) return;
+    if (mapRef.current) return; // already initialized
 
-  function handleVisibilityToggle(id: string) {
+    const source = tileSources[selectedSourceIdx] ?? tileSources[0];
+    const map = new maplibregl.Map({
+      container: mapContainerRef.current,
+      style: buildMapStyle(source),
+      center: DEFAULT_CENTER,
+      zoom: DEFAULT_ZOOM,
+    });
+
+    map.addControl(new maplibregl.NavigationControl(), 'top-left');
+    map.addControl(new maplibregl.AttributionControl({ compact: true }), 'bottom-right');
+
+    mapRef.current = map;
+
+    return () => {
+      map.remove();
+      mapRef.current = null;
+    };
+    // Only run on mount after loading; tile source changes handled separately
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loading]);
+
+  // Update tile source when selector changes
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || tileSources.length === 0) return;
+
+    const source = tileSources[selectedSourceIdx];
+    if (!source) return;
+
+    // Wait for map style to be loaded before updating
+    if (!map.isStyleLoaded()) {
+      const onStyleLoad = () => {
+        map.setStyle(buildMapStyle(source));
+        map.off('style.load', onStyleLoad);
+      };
+      map.on('style.load', onStyleLoad);
+      return;
+    }
+
+    map.setStyle(buildMapStyle(source));
+  }, [selectedSourceIdx, tileSources]);
+
+  const handleVisibilityToggle = useCallback((id: string) => {
     setLayers((prev) =>
       prev.map((l) => (l.id === id ? { ...l, visible: !l.visible } : l)),
     );
-  }
+  }, []);
 
-  function handleOpacityChange(id: string, opacity: number) {
+  const handleOpacityChange = useCallback((id: string, opacity: number) => {
     setLayers((prev) =>
       prev.map((l) => (l.id === id ? { ...l, opacity } : l)),
     );
-  }
+  }, []);
+
+  const activeSource: TileSource | undefined = tileSources[selectedSourceIdx];
 
   if (loading) {
     return (
@@ -97,41 +178,29 @@ export default function GisView() {
         )}
         {activeSource && (
           <span className="ml-auto text-xs text-gray-400 dark:text-gray-500">
-            {activeSource.attribution}
+            缩放: {activeSource.min_zoom}–{activeSource.max_zoom} · {activeSource.attribution}
           </span>
         )}
       </div>
 
-      {/* Main area: map placeholder + layers sidebar */}
+      {/* Main area: map + layers sidebar */}
       <div className="flex min-h-0 flex-1 gap-4">
-        {/* Map placeholder */}
-        <div className="relative flex flex-1 flex-col items-center justify-center overflow-hidden rounded-xl border border-dashed border-gray-300 bg-gradient-to-br from-blue-50 to-sky-100 dark:border-gray-600 dark:from-gray-800 dark:to-gray-900">
-          <Map className="mb-3 h-16 w-16 text-blue-300 dark:text-blue-700" />
-          <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
-            地图视图（待集成 MapLibre GL JS）
-          </p>
-
-          {activeSource && (
-            <div className="mt-6 w-80 rounded-lg border border-gray-200 bg-white/80 px-4 py-3 text-left shadow-sm backdrop-blur dark:border-gray-700 dark:bg-gray-800/80">
-              <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-gray-400 dark:text-gray-500">
-                当前底图
-              </p>
-              <p className="text-sm font-medium text-gray-900 dark:text-white">
-                {activeSource.name}
-              </p>
-              <p className="mt-1 truncate text-xs text-gray-500 dark:text-gray-400">
-                {activeSource.url_template}
-              </p>
-              <div className="mt-2 flex gap-3 text-xs text-gray-400 dark:text-gray-500">
-                <span>缩放: {activeSource.min_zoom}–{activeSource.max_zoom}</span>
-                <span>· {activeSource.attribution}</span>
-              </div>
+        {/* Map container */}
+        <div className="relative flex-1 overflow-hidden rounded-xl border border-gray-200 dark:border-gray-700">
+          <div
+            ref={mapContainerRef}
+            className="absolute inset-0"
+          />
+          {tileSources.length === 0 && (
+            <div className="absolute inset-0 flex flex-col items-center justify-center bg-gray-50 text-gray-400 dark:bg-gray-900 dark:text-gray-500">
+              <Globe className="mb-3 h-16 w-16" />
+              <p className="text-sm font-medium">暂无底图源可用</p>
             </div>
           )}
         </div>
 
         {/* Layers sidebar */}
-        <Card title="图层" className="w-72 shrink-0 overflow-hidden">
+        <Card title="图层" className="w-70 shrink-0 overflow-hidden">
           {layers.length === 0 ? (
             <div className="flex flex-col items-center gap-2 py-10 text-gray-400 dark:text-gray-500">
               <Layers className="h-10 w-10" />

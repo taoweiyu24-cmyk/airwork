@@ -160,6 +160,33 @@ fn list_mail_accounts(state: tauri::State<WifState>) -> Result<String, String> {
     serde_json::to_string(&accounts).map_err(|e| e.to_string())
 }
 
+// ── Mail Sync ────────────────────────────────────────────────────────────────
+
+#[tauri::command]
+async fn sync_mail_inbox(
+    account_id: String,
+    limit: Option<usize>,
+    state: tauri::State<'_, WifState>,
+) -> Result<String, String> {
+    // Look up the MailAccount by ID from the database.
+    let account = {
+        let app = state.0.lock().map_err(|e| e.to_string())?;
+        let repo = wif_data::SqliteMailAccountRepo::new(app.db());
+        use wif_domain::MailAccountRepository;
+        let ulid = ulid::Ulid::from_string(&account_id).map_err(|e| e.to_string())?;
+        repo.find_by_id(ulid)
+            .map_err(|e| e.to_string())?
+            .ok_or_else(|| format!("邮件账户未找到: {account_id}"))?
+    };
+
+    // Perform the IMAP sync (async — lock is already released).
+    let messages = wif_mail::MailService::sync_inbox(&account, limit.unwrap_or(50))
+        .await
+        .map_err(|e| e.to_string())?;
+
+    serde_json::to_string(&messages).map_err(|e| e.to_string())
+}
+
 // ── AI Profiles ───────────────────────────────────────────────────────────────
 
 #[tauri::command]
@@ -205,6 +232,7 @@ pub fn run() {
             list_tile_sources,
             list_gis_layers,
             list_mail_accounts,
+            sync_mail_inbox,
             list_ai_profiles,
         ])
         .run(tauri::generate_context!())

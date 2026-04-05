@@ -47,7 +47,9 @@ wif-core = { path = "crates/wif-core" }
 wif-domain = { path = "crates/wif-domain" }
 wif-data = { path = "crates/wif-data" }
 wif-ai = { path = "crates/wif-ai" }
+wif-mail = { path = "crates/wif-mail" }
 wif-search = { path = "crates/wif-search" }
 wif-gis = { path = "crates/wif-gis" }
 ulid = { workspace = true }
+tokio = { workspace = true }
 
